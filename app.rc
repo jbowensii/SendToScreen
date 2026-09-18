@@ -1,0 +1,28 @@
+#include <windows.h>
+
+1 ICON "icons/icon.ico"
+
+1 VERSIONINFO
+FILEVERSION 1,0,0,0
+PRODUCTVERSION 1,0,0,0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904B0"
+    BEGIN
+      VALUE "CompanyName", "John B Owens II"
+      VALUE "FileDescription", "SendToScreen"
+      VALUE "FileVersion", "1.0.0.0"
+      VALUE "ProductName", "SendToScreen"
+      VALUE "ProductVersion", "1.0.0"
+      VALUE "OriginalFilename", "SendToScreen.exe"
+      VALUE "LegalCopyright", "Copyright (c) 2026 John B Owens II"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1200
+  END
+END
