@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.0 - 2026-09-21
+
+### Fixed
+
+- Moved windows now reliably come to the front with focus. The final activation borrows foreground rights the same way the menu does, since the swallowed click leaves the process without them; the log records `foreground=1/0`.
+
+### Added
+
+- While the screen menu is open, every monitor shows its number in a large centered badge (dark translucent rounded square, white Segoe UI Variable number, in the style of Settings > Display > Identify). Numbers match the menu, so a display Windows has renumbered after a monitor was off is still unambiguous.
+- `--identify` previews the badges for five seconds.
+
 ## 1.0.0 - 2026-09-18
 
 First release.

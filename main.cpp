@@ -52,6 +52,20 @@ static LRESULT CALLBACK MouseProc(int code, WPARAM wp, LPARAM lp) {
     return CallNextHookEx(g_hook, code, wp, lp);
 }
 
+// The hook swallowed the click, so foreground rights must be borrowed from the foreground thread.
+static bool ForceForeground(HWND target) {
+    if (SetForegroundWindow(target)) return true;
+    const HWND fg = GetForegroundWindow();
+    const DWORD other = GetWindowThreadProcessId(fg, nullptr);
+    const DWORD me = GetCurrentThreadId();
+    bool ok = false;
+    if (other && other != me && !IsHungAppWindow(fg) && AttachThreadInput(other, me, TRUE)) {
+        ok = SetForegroundWindow(target) != 0;
+        AttachThreadInput(other, me, FALSE);
+    }
+    return ok;
+}
+
 static int ShowMonitorMenu(const std::vector<MonitorInfo>& mons, HMONITOR current, POINT pt) {
     const HMENU menu = CreatePopupMenu();
     for (size_t i = 0; i < mons.size(); ++i) {
@@ -60,16 +74,7 @@ static int ShowMonitorMenu(const std::vector<MonitorInfo>& mons, HMONITOR curren
         swprintf_s(label, L"Screen %zu     %ld x %ld%s", i + 1, m.full.right - m.full.left, m.full.bottom - m.full.top, m.primary ? L"  (primary)" : L"");
         AppendMenuW(menu, MF_STRING | (m.h == current ? MF_GRAYED : 0), i + 1, label);
     }
-    // The hook swallowed the click, so we are not the last input receiver; borrow the foreground thread's queue.
-    if (!SetForegroundWindow(g_hwnd)) {
-        const HWND fg = GetForegroundWindow();
-        const DWORD other = GetWindowThreadProcessId(fg, nullptr);
-        const DWORD me = GetCurrentThreadId();
-        if (other && other != me && !IsHungAppWindow(fg) && AttachThreadInput(other, me, TRUE)) {
-            SetForegroundWindow(g_hwnd);
-            AttachThreadInput(other, me, FALSE);
-        }
-    }
+    ForceForeground(g_hwnd);
     const int pick = TrackPopupMenuEx(menu, TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON, pt.x, pt.y, g_hwnd, nullptr);
     PostMessageW(g_hwnd, WM_NULL, 0, 0);
     DestroyMenu(menu);
@@ -91,7 +96,9 @@ static void OnTaskbarClick(POINT pt) {
     const std::vector<MonitorInfo> mons = Monitors();
     if (wins.empty() || mons.size() < 2) return;
 
+    const std::vector<HWND> numbers = ShowScreenNumbers(mons);
     const int pick = ShowMonitorMenu(mons, MonitorFromWindow(wins[0], MONITOR_DEFAULTTONEAREST), pt);
+    HideScreenNumbers(numbers);
     Log(L"pick=" + std::to_wstring(pick));
     if (pick <= 0 || static_cast<size_t>(pick) > mons.size()) return;
 
@@ -99,7 +106,9 @@ static void OnTaskbarClick(POINT pt) {
         MoveWindowToMonitor(*it, mons[pick - 1]);
         SetWindowPos(*it, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
     }
-    SetForegroundWindow(wins[0]);
+    const bool fg = ForceForeground(wins[0]);
+    SetWindowPos(wins[0], HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    Log(L"foreground=" + std::to_wstring(fg));
 }
 
 static void ShowTrayMenu(HWND h) {
@@ -143,6 +152,12 @@ int WINAPI wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE, _In_ PWSTR cmd, _I
     if (cmd && wcsstr(cmd, L"--dump")) {
         if (FAILED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED))) return 1;
         DumpWindows();
+        return 0;
+    }
+    if (cmd && wcsstr(cmd, L"--identify")) {
+        const std::vector<HWND> numbers = ShowScreenNumbers(Monitors());
+        Sleep(5000);
+        HideScreenNumbers(numbers);
         return 0;
     }
 

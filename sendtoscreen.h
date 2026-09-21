@@ -21,5 +21,9 @@ void DumpWindows();
 std::vector<MonitorInfo> Monitors();
 void MoveWindowToMonitor(HWND hwnd, const MonitorInfo& target);
 
+// overlay.cpp
+std::vector<HWND> ShowScreenNumbers(const std::vector<MonitorInfo>& mons);
+void HideScreenNumbers(const std::vector<HWND>& wins);
+
 // main.cpp
 void Log(const std::wstring& line);

@@ -2,7 +2,7 @@
 
 Send any running app to another monitor straight from the Windows 11 taskbar.
 
-**Ctrl + right-click** a running app's taskbar button, pick a screen from the menu, and every window of that app moves there. Size and position are kept (clamped to fit), maximized windows stay maximized, minimized windows are restored, and the app comes to the front.
+**Ctrl + right-click** a running app's taskbar button, pick a screen from the menu, and every window of that app moves there. While the menu is open each monitor shows its number in a large centered badge, so the choice is unambiguous even after Windows has renumbered displays. Size and position are kept (clamped to fit), maximized windows stay maximized, minimized windows are restored, and the app comes to the front.
 
 Plain right-click, Shift+right-click and Ctrl+left-click keep their normal taskbar behaviour.
 
@@ -10,7 +10,7 @@ Plain right-click, Shift+right-click and Ctrl+left-click keep their normal taskb
 
 ## Install
 
-Download `SendToScreen_Setup_v1.0.0.exe` from the [latest release](https://github.com/jbowensii/SendToScreen/releases/latest) and run it.
+Download `SendToScreen_Setup_v1.1.0.exe` from the [latest release](https://github.com/jbowensii/SendToScreen/releases/latest) and run it.
 
 - Per-user install, no administrator prompt, code-signed.
 - One option: start SendToScreen when you sign in (on by default).
@@ -53,12 +53,14 @@ From an x64 Native Tools prompt:
 | `taskbar.cpp` | UI Automation lookup of the button under the cursor; enumeration of taskbar-eligible windows |
 | `logic.cpp` | Pure functions: button id and label parsing, window matching, placement math |
 | `mover.cpp` | Monitor enumeration and the restore / move / re-maximize sequence |
+| `overlay.cpp` | Per-monitor screen-number badge shown while the menu is open |
 | `tests.cpp` | Unit tests for `logic.cpp` (100% line coverage) |
 | `installer/SendToScreen.iss` | Inno Setup script |
 
 ## Diagnostics
 
 - `SendToScreen.exe --dump` logs every taskbar-eligible window with its title, AUMID, exe and FileDescription.
+- `SendToScreen.exe --identify` shows the screen-number badges for five seconds.
 - Each gesture appends to `%LOCALAPPDATA%\SendToScreen.log` (button id and name, match count, menu pick). The log is capped at 1 MB and removed on uninstall.
 
 ## License
