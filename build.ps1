@@ -4,7 +4,8 @@
 param([string]$Icon = "", [switch]$NoSign)
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
-$vs = "C:\Program Files\Microsoft Visual Studio\18\Community"
+$vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+if (-not $vs) { $vs = "C:\Program Files\Microsoft Visual Studio\18\Community" }
 $iscc = "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe"
 $sign = "$env:USERPROFILE\Tools\CodeSignTool\sign.bat"
 
