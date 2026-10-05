@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1 - 2026-10-05
+
+### Changed
+
+- Project relocated to C:\dev; code-signing tool path made portable (%USERPROFILE%-anchored).
+
 ## 1.1.0 - 2026-09-21
 
 ### Fixed

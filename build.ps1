@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 $vs = "C:\Program Files\Microsoft Visual Studio\18\Community"
 $iscc = "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe"
-$sign = "C:\Users\johnb\Tools\CodeSignTool\sign.bat"
+$sign = "$env:USERPROFILE\Tools\CodeSignTool\sign.bat"
 
 if ($Icon) { python "$root\icons\make_icons.py" $Icon }
 
