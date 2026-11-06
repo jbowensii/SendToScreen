@@ -114,7 +114,7 @@ static void OnTaskbarClick(POINT pt) {
 
 static void ShowTrayMenu(HWND h) {
     const HMENU m = CreatePopupMenu();
-    AppendMenuW(m, MF_STRING, 2, L"Placement Rules…");
+    AppendMenuW(m, MF_STRING, 2, L"Placement Rules...");
     AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(m, MF_STRING, 1, L"Exit SendToScreen");
     POINT pt{};

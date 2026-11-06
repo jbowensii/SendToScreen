@@ -117,6 +117,8 @@ static void CALLBACK EnforceProc(HWND, UINT, UINT_PTR timerId, DWORD) {
         return;
     }
     int drift = CheckPlacement(e.hwnd, g_rules[e.ruleIdx], Monitors());
+    // Always re-apply z-order for "back" windows — reliable detection is hard
+    if (!g_rules[e.ruleIdx].bringToFront) drift |= 4;
     if (drift) ApplyRule(e.hwnd, g_rules[e.ruleIdx], drift);
 }
 
@@ -131,7 +133,7 @@ static void CALLBACK DelayedApplyProc(HWND, UINT, UINT_PTR timerId, DWORD) {
     if (!IsWindow(pa.hwnd) || pa.ruleIdx >= g_rules.size()) return;
     ApplyRule(pa.hwnd, g_rules[pa.ruleIdx]);
     UINT_PTR tid = SetTimer(nullptr, 0, 500, EnforceProc);
-    if (tid) g_enforce[tid] = { pa.hwnd, pa.ruleIdx, 10 };
+    if (tid) g_enforce[tid] = { pa.hwnd, pa.ruleIdx, 20 };
 }
 
 static void CALLBACK OnWindowShow(HWINEVENTHOOK, DWORD event, HWND hwnd, LONG idObject, LONG, DWORD, DWORD) {

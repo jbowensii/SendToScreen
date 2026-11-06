@@ -10,9 +10,9 @@ Plain right-click, Shift+right-click and Ctrl+left-click keep their normal taskb
 
 ## Install
 
-Download `SendToScreen_Setup_v1.1.0.exe` from the [latest release](https://github.com/jbowensii/SendToScreen/releases/latest) and run it.
+Download `SendToScreen_Setup_v2.0.1.exe` from the [latest release](https://github.com/jbowensii/SendToScreen/releases/latest) and run it.
 
-- Per-user install, no administrator prompt, code-signed.
+- Requires administrator (UAC prompt) — needed to control windows across all integrity levels.
 - One option: start SendToScreen when you sign in (on by default).
 - Lives in the tray; right-click the icon to exit.
 - Uninstall from Settings > Apps.
@@ -54,6 +54,8 @@ From an x64 Native Tools prompt:
 | `logic.cpp` | Pure functions: button id and label parsing, window matching, placement math |
 | `mover.cpp` | Monitor enumeration and the restore / move / re-maximize sequence |
 | `overlay.cpp` | Per-monitor screen-number badge shown while the menu is open |
+| `placement.cpp` | Auto-placement engine: WinEvent hook, delayed apply, enforcement polling |
+| `rules.cpp` | Rule persistence: load/save JSON, window snapshot |
 | `tests.cpp` | Unit tests for `logic.cpp` (100% line coverage) |
 | `installer/SendToScreen.iss` | Inno Setup script |
 
