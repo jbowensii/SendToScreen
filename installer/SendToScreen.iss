@@ -1,5 +1,5 @@
 #define AppName "SendToScreen"
-#define AppVersion "1.1.1"
+#define AppVersion "2.0.0"
 #define AppExe "SendToScreen.exe"
 
 [Setup]
@@ -11,7 +11,7 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 DisableDirPage=yes
-PrivilegesRequired=lowest
+PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=..\release

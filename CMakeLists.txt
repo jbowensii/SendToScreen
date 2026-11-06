@@ -4,10 +4,11 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 add_compile_definitions(UNICODE _UNICODE NOMINMAX)
 add_compile_options(/W4)
 
-add_executable(SendToScreen WIN32 main.cpp taskbar.cpp mover.cpp logic.cpp overlay.cpp app.rc app.manifest)
+add_executable(SendToScreen WIN32 main.cpp taskbar.cpp mover.cpp logic.cpp overlay.cpp rules.cpp placement.cpp rulesdlg.cpp app.rc app.manifest)
 target_compile_features(SendToScreen PRIVATE cxx_std_17)
 string(REPLACE "/O2" "/O1" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 target_compile_options(SendToScreen PRIVATE $<$<CONFIG:Release>:/GL /Gy /Gw>)
+set_property(TARGET SendToScreen PROPERTY LINK_FLAGS "/MANIFESTUAC:NO")
 target_link_options(SendToScreen PRIVATE $<$<CONFIG:Release>:/LTCG /OPT:REF /OPT:ICF>
     /DELAYLOAD:propsys.dll /DELAYLOAD:version.dll /DELAYLOAD:dwmapi.dll /DELAYLOAD:oleaut32.dll /DELAYLOAD:ole32.dll /DELAYLOAD:gdiplus.dll)
 target_link_libraries(SendToScreen PRIVATE user32 shell32 ole32 oleaut32 propsys version dwmapi gdiplus delayimp)

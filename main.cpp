@@ -1,4 +1,5 @@
 #include "sendtoscreen.h"
+#include "rules.h"
 #include <shellapi.h>
 #include <cstdio>
 
@@ -113,6 +114,8 @@ static void OnTaskbarClick(POINT pt) {
 
 static void ShowTrayMenu(HWND h) {
     const HMENU m = CreatePopupMenu();
+    AppendMenuW(m, MF_STRING, 2, L"Placement Rules…");
+    AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(m, MF_STRING, 1, L"Exit SendToScreen");
     POINT pt{};
     GetCursorPos(&pt);
@@ -121,6 +124,7 @@ static void ShowTrayMenu(HWND h) {
     PostMessageW(h, WM_NULL, 0, 0);
     DestroyMenu(m);
     if (pick == 1) DestroyWindow(h);
+    if (pick == 2) ShowRulesDialog(reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(h, GWLP_HINSTANCE)));
 }
 
 static LRESULT CALLBACK WndProc(HWND h, UINT msg, WPARAM wp, LPARAM lp) {
@@ -130,6 +134,12 @@ static LRESULT CALLBACK WndProc(HWND h, UINT msg, WPARAM wp, LPARAM lp) {
         return 0;
     }
     switch (msg) {
+    case WM_COMMAND:
+        if (LOWORD(wp) == 2) PostMessageW(h, WM_APP + 3, 0, 0);
+        return 0;
+    case WM_APP + 3:
+        ShowRulesDialog(reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(h, GWLP_HINSTANCE)));
+        return 0;
     case WM_TASKBAR_CLICK:
         if (!busy) {
             busy = true;
@@ -178,6 +188,8 @@ int WINAPI wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE, _In_ PWSTR cmd, _I
         return 1;
     }
 
+    StartPlacementHook();
+
     g_nid.cbSize = sizeof(g_nid);
     g_nid.hWnd = g_hwnd;
     g_nid.uID = 1;
@@ -194,6 +206,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE, _In_ PWSTR cmd, _I
         DispatchMessageW(&msg);
     }
 
+    StopPlacementHook();
     UnhookWindowsHookEx(g_hook);
     Shell_NotifyIconW(NIM_DELETE, &g_nid);
     CloseHandle(mutex);

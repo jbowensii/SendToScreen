@@ -27,3 +27,6 @@ void HideScreenNumbers(const std::vector<HWND>& wins);
 
 // main.cpp
 void Log(const std::wstring& line);
+
+// rulesdlg.cpp
+void ShowRulesDialog(HINSTANCE hInst);
