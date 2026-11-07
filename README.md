@@ -46,7 +46,7 @@ Rules are applied automatically when the app launches and enforced for 10 second
 
 ## Install
 
-Download **`SendToScreen_Setup_v2.0.2.exe`** from the [latest release](https://github.com/jbowensii/SendToScreen/releases/latest) and run it.
+Download **`SendToScreen_Setup_v2.0.3.exe`** from the [latest release](https://github.com/jbowensii/SendToScreen/releases/latest) and run it.
 
 - Requires administrator for installation (UAC prompt) — needed to control windows across all integrity levels
 - Option to start SendToScreen when you sign in (on by default)
