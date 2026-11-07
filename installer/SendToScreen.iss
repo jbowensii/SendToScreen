@@ -1,5 +1,5 @@
 #define AppName "SendToScreen"
-#define AppVersion "2.0.1"
+#define AppVersion "2.0.2"
 #define AppExe "SendToScreen.exe"
 
 [Setup]
