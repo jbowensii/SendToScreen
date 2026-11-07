@@ -8,6 +8,8 @@
 
 static std::wstring RulesPath() {
     wchar_t dir[MAX_PATH];
+    if (GetEnvironmentVariableW(L"SENDTOSCREEN_RULES_DIR", dir, MAX_PATH))
+        return std::wstring(dir) + L"\\rules.json";
     if (!GetEnvironmentVariableW(L"LOCALAPPDATA", dir, MAX_PATH)) return L"";
     std::wstring path = std::wstring(dir) + L"\\SendToScreen";
     CreateDirectoryW(path.c_str(), nullptr);

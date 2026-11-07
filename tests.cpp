@@ -93,22 +93,20 @@ static void TestMatchWindows() {
 
 // ---------- rules.cpp: SaveRules / LoadRules round-trip ----------
 
-// Backup and restore the real rules file so tests don't clobber user data
-static std::wstring RealRulesPath() {
-    wchar_t dir[MAX_PATH];
-    if (!GetEnvironmentVariableW(L"LOCALAPPDATA", dir, MAX_PATH)) return L"";
-    return std::wstring(dir) + L"\\SendToScreen\\rules.json";
-}
-
+// Redirect rules to a temp directory so tests never touch the real rules.json
 struct RulesGuard {
-    std::wstring path, backup;
-    RulesGuard() : path(RealRulesPath()), backup(path + L".test-bak") {
-        if (!path.empty()) MoveFileW(path.c_str(), backup.c_str()); // ok if missing
+    wchar_t tmpDir[MAX_PATH];
+    RulesGuard() {
+        GetTempPathW(MAX_PATH, tmpDir);
+        wcscat_s(tmpDir, L"SendToScreenTest");
+        CreateDirectoryW(tmpDir, nullptr);
+        SetEnvironmentVariableW(L"SENDTOSCREEN_RULES_DIR", tmpDir);
     }
     ~RulesGuard() {
-        if (path.empty()) return;
-        DeleteFileW(path.c_str());
-        MoveFileW(backup.c_str(), path.c_str()); // restore original
+        std::wstring f = std::wstring(tmpDir) + L"\\rules.json";
+        DeleteFileW(f.c_str());
+        RemoveDirectoryW(tmpDir);
+        SetEnvironmentVariableW(L"SENDTOSCREEN_RULES_DIR", nullptr);
     }
 };
 
