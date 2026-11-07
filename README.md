@@ -13,7 +13,7 @@
 
 ## Why I Built This
 
-I have three monitors, one of them a 48″ OLED. OLEDs are gorgeous, but they have a burn-in protection mode that kicks in when the display goes idle — the screen dims, runs pixel-refresh routines, and you're locked out for several minutes. That's fine when you're done for the night, but not when you're in the middle of work or a game and just need to keep going on a different screen.
+I have three monitors, one of them a 27″ OLED. OLEDs are gorgeous, but they have a burn-in protection mode that kicks in when the display goes idle — the screen dims, runs pixel-refresh routines, and you're locked out for several minutes. That's fine when you're done for the night, but not when you're in the middle of work or a game and just need to keep going on a different screen.
 
 I wanted a way to **move any running application to another monitor with a single gesture** — no dragging windows across three screens, no fumbling with display settings. Just **Ctrl + right-click** the app's taskbar icon, pick a screen, done.
 
