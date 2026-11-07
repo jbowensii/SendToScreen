@@ -1,69 +1,85 @@
-# SendToScreen
+<p align="center">
+  <img src="icons/icon256.png" alt="SendToScreen icon" width="128">
+</p>
 
-Send any running app to another monitor straight from the Windows 11 taskbar.
+<h1 align="center">SendToScreen</h1>
 
-**Ctrl + right-click** a running app's taskbar button, pick a screen from the menu, and every window of that app moves there. While the menu is open each monitor shows its number in a large centered badge, so the choice is unambiguous even after Windows has renumbered displays. Size and position are kept (clamped to fit), maximized windows stay maximized, minimized windows are restored, and the app comes to the front.
+<p align="center">
+  Move any running app to another monitor straight from the Windows 11 taskbar.<br>
+  <strong>~288 KB on disk · ~2–3 MB RAM · pure Win32 — no frameworks, no services, no DLLs.</strong>
+</p>
 
-Plain right-click, Shift+right-click and Ctrl+left-click keep their normal taskbar behaviour.
+---
 
-![icon](icons/icon256.png)
+## Why I Built This
+
+I have three monitors, one of them a 48″ OLED. OLEDs are gorgeous, but they have a burn-in protection mode that kicks in when the display goes idle — the screen dims, runs pixel-refresh routines, and you're locked out for several minutes. That's fine when you're done for the night, but not when you're in the middle of work or a game and just need to keep going on a different screen.
+
+I wanted a way to **move any running application to another monitor with a single gesture** — no dragging windows across three screens, no fumbling with display settings. Just **Ctrl + right-click** the app's taskbar icon, pick a screen, done.
+
+The other half of the problem is streaming. I use OBS, Stream Deck, chat overlays, and a handful of other tools that each need to land on a specific monitor when they launch. Windows doesn't remember this reliably, and most apps ignore the "last position" hint entirely. So SendToScreen also has **auto-placement rules**: tell it which app goes on which monitor, in what state (maximized, windowed at a specific size, or minimized), and it enforces that every time the app starts.
+
+## Features
+
+### Move Any App Instantly
+
+**Ctrl + right-click** a running app's taskbar button to open the monitor picker. While the menu is open, each monitor shows a large numbered badge so you always know which is which — even after Windows has renumbered your displays.
+
+- Window size and position are preserved (clamped to fit the target monitor)
+- Maximized windows stay maximized
+- Minimized windows are restored
+- The app comes to the front
+
+Plain right-click, Shift+right-click, and Ctrl+left-click keep their normal taskbar behavior.
+
+### Auto-Placement Rules
+
+Right-click the tray icon → **Manage Rules** to open the rules editor. For each app you can set:
+
+| Setting | Options |
+|---------|---------|
+| **Monitor** | Any connected display, by number |
+| **Window state** | Maximized, Windowed (with position and size), or Minimized |
+| **Bring to front** | Force the app to the foreground, or send it to the back |
+
+Rules are applied automatically when the app launches and enforced for 10 seconds afterward (in case the app tries to reposition itself). Rules persist in `%LOCALAPPDATA%\SendToScreen\rules.json` and survive reboots and reinstalls.
 
 ## Install
 
-Download `SendToScreen_Setup_v2.0.1.exe` from the [latest release](https://github.com/jbowensii/SendToScreen/releases/latest) and run it.
+Download **`SendToScreen_Setup_v2.0.2.exe`** from the [latest release](https://github.com/jbowensii/SendToScreen/releases/latest) and run it.
 
-- Requires administrator (UAC prompt) — needed to control windows across all integrity levels.
-- One option: start SendToScreen when you sign in (on by default).
-- Lives in the tray; right-click the icon to exit.
-- Uninstall from Settings > Apps.
+- Requires administrator for installation (UAC prompt) — needed to control windows across all integrity levels
+- Option to start SendToScreen when you sign in (on by default)
+- Lives in the system tray; right-click the tray icon to exit or manage placement rules
+- Uninstall from **Settings → Apps**
 
-Requires Windows 11 with more than one monitor.
+**Requirements:** Windows 11 with two or more monitors.
 
-## Why a hook and not a taskbar menu item
+## How It Works
 
-Windows 11 offers no API for adding items to a taskbar button's jump list, and the taskbar is a XAML surface owned by Explorer. SendToScreen therefore installs a low-level mouse hook, swallows only the Ctrl + right-click gesture over a taskbar, identifies the button through UI Automation, and shows its own menu. No Explorer injection, no DLLs, no services.
+Windows 11 offers no API for adding items to a taskbar button's context menu — the taskbar is a XAML surface owned by Explorer. SendToScreen installs a low-level mouse hook, intercepts only the **Ctrl + right-click** gesture over taskbar buttons, identifies the button through UI Automation, and shows its own popup menu. No Explorer injection, no DLLs, no services.
 
-## Footprint
-
-Measured on the installed build at idle: one thread, 0.15 MB working set, 1.6 MB private memory, 0 CPU. The hook callback returns after two integer compares for every mouse event that is not a right-button event with Ctrl held. The exe is 240 KB and depends only on Windows.
-
-## How a button is matched to windows
-
-The Windows 11 taskbar exposes `Appid: <AUMID>` as the button's UI Automation AutomationId. Windows are matched by their AUMID (window property store, else the process's package identity), then by exe path tail for path-style ids, then by the button label against window titles and the exe FileDescription. Registry-only AUMIDs such as Office's land on the label fallback.
-
-Limits: windows of elevated (run-as-administrator) apps cannot be moved by a per-user process; the log shows a match and nothing moves. Hung apps are skipped so the hook never stalls.
-
-## Build
-
-Requires Visual Studio 2022 or later with the C++ workload (CMake and Ninja come with it), and Inno Setup 6 for the installer.
-
-From an x64 Native Tools prompt:
-
-    cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release
-    cmake --build build
-    build\tests.exe
-
-`build.ps1` runs the full release pipeline: render the icon, build, run the unit tests, sign the exe, compile the installer, sign the installer. Signing uses a local SSL.com eSigner wrapper; pass `-NoSign` to skip it. `build.ps1 -Icon A` re-renders `icons\icon.ico` from one of the concepts in `icons\make_icons.py`.
-
-## Layout
-
-| File | Role |
-|---|---|
-| `main.cpp` | Tray icon, mouse hook, monitor menu, message loop |
-| `taskbar.cpp` | UI Automation lookup of the button under the cursor; enumeration of taskbar-eligible windows |
-| `logic.cpp` | Pure functions: button id and label parsing, window matching, placement math |
-| `mover.cpp` | Monitor enumeration and the restore / move / re-maximize sequence |
-| `overlay.cpp` | Per-monitor screen-number badge shown while the menu is open |
-| `placement.cpp` | Auto-placement engine: WinEvent hook, delayed apply, enforcement polling |
-| `rules.cpp` | Rule persistence: load/save JSON, window snapshot |
-| `tests.cpp` | Unit tests for `logic.cpp` (100% line coverage) |
-| `installer/SendToScreen.iss` | Inno Setup script |
+Auto-placement uses a WinEvent hook (`EVENT_OBJECT_SHOW`) to detect new windows. When a window appears whose executable matches a rule, SendToScreen waits 200ms for the app to finish its own layout, moves the window to the target monitor, and polls every 500ms for 10 seconds to enforce the rule against apps that fight back.
 
 ## Diagnostics
 
-- `SendToScreen.exe --dump` logs every taskbar-eligible window with its title, AUMID, exe and FileDescription.
-- `SendToScreen.exe --identify` shows the screen-number badges for five seconds.
-- Each gesture appends to `%LOCALAPPDATA%\SendToScreen.log` (button id and name, match count, menu pick). The log is capped at 1 MB and removed on uninstall.
+- `SendToScreen.exe --dump` — logs every taskbar-eligible window with its title, AUMID, exe path, and FileDescription
+- `SendToScreen.exe --identify` — shows the screen-number badges for five seconds
+- Each gesture is logged to `%LOCALAPPDATA%\SendToScreen.log` (capped at 1 MB, removed on uninstall)
+
+## Build
+
+Requires Visual Studio 2022+ with the C++ workload (CMake and Ninja included), and [Inno Setup 6](https://jrsoftware.org/isdl.php) for the installer.
+
+From an x64 Native Tools prompt:
+
+```
+cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+build\tests.exe
+```
+
+`build.ps1` runs the full release pipeline: build, test, sign (SSL.com eSigner), and compile the installer. Pass `-NoSign` to skip code signing.
 
 ## License
 
