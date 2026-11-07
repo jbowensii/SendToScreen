@@ -68,8 +68,12 @@ std::vector<HWND> ShowScreenNumbers(const std::vector<MonitorInfo>& mons) {
         wc.lpszClassName = L"SendToScreenNumber";
         return RegisterClassW(&wc) != 0;
     }();
-    Gdiplus::GdiplusStartupInput in;
-    if (!registered || Gdiplus::GdiplusStartup(&g_gdip, &in, nullptr) != Gdiplus::Ok) return {};
+    static bool g_gdipReady = false;
+    if (!g_gdipReady) {
+        Gdiplus::GdiplusStartupInput in;
+        if (!registered || Gdiplus::GdiplusStartup(&g_gdip, &in, nullptr) != Gdiplus::Ok) return {};
+        g_gdipReady = true;
+    }
     std::vector<HWND> out;
     for (size_t i = 0; i < mons.size(); ++i) out.push_back(NumberWindow(mons[i], static_cast<int>(i) + 1));
     return out;
@@ -77,5 +81,4 @@ std::vector<HWND> ShowScreenNumbers(const std::vector<MonitorInfo>& mons) {
 
 void HideScreenNumbers(const std::vector<HWND>& wins) {
     for (HWND h : wins) DestroyWindow(h);
-    if (!wins.empty()) Gdiplus::GdiplusShutdown(g_gdip);
 }

@@ -13,7 +13,8 @@ target_link_options(SendToScreen PRIVATE $<$<CONFIG:Release>:/LTCG /OPT:REF /OPT
     /DELAYLOAD:propsys.dll /DELAYLOAD:version.dll /DELAYLOAD:dwmapi.dll /DELAYLOAD:oleaut32.dll /DELAYLOAD:ole32.dll /DELAYLOAD:gdiplus.dll)
 target_link_libraries(SendToScreen PRIVATE user32 shell32 ole32 oleaut32 propsys version dwmapi gdiplus delayimp)
 
-add_executable(tests tests.cpp logic.cpp)
+add_executable(tests tests.cpp logic.cpp rules.cpp mover.cpp)
+target_link_libraries(tests PRIVATE user32 shell32)
 target_compile_features(tests PRIVATE cxx_std_17)
 enable_testing()
 add_test(NAME unit COMMAND tests)

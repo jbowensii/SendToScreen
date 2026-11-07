@@ -8,14 +8,20 @@ static HWINEVENTHOOK g_eventHook;
 static std::vector<PlacementRule> g_rules;
 static std::unordered_set<HWND> g_placed;
 
-struct Enforcement { HWND hwnd; size_t ruleIdx; int ticksLeft; };
+struct Enforcement { HWND hwnd; std::wstring exe; int ticksLeft; };
 static std::unordered_map<UINT_PTR, Enforcement> g_enforce;
 
 // Pending first-apply: window detected but waiting for the app to finish its own geometry setup
-struct PendingApply { HWND hwnd; size_t ruleIdx; };
+struct PendingApply { HWND hwnd; std::wstring exe; };
 static std::unordered_map<UINT_PTR, PendingApply> g_pending;
 
 void ReloadPlacementRules() { g_rules = LoadRules(); }
+
+static const PlacementRule* FindRule(const std::wstring& exe) {
+    for (const auto& r : g_rules)
+        if (_wcsicmp(r.exe.c_str(), exe.c_str()) == 0) return &r;
+    return nullptr;
+}
 
 static std::wstring ExeFilename(HWND hwnd) {
     DWORD pid = 0;
@@ -65,13 +71,8 @@ static void ApplyRule(HWND hwnd, const PlacementRule& rule, int drift = 7) {
     switch (rule.state) {
     case PlacementRule::Maximized: {
         if (drift & 3) {
-            WINDOWPLACEMENT wp{ sizeof(wp) };
-            GetWindowPlacement(hwnd, &wp);
-            wp.showCmd = SW_SHOWMAXIMIZED;
-            wp.rcNormalPosition = { target.work.left, target.work.top,
-                                    target.work.left + (target.work.right - target.work.left) / 2,
-                                    target.work.top + (target.work.bottom - target.work.top) / 2 };
-            SetWindowPlacement(hwnd, &wp);
+            MoveWindowToMonitor(hwnd, target);
+            ShowWindow(hwnd, SW_MAXIMIZE);
         }
         if (drift & 4 || drift & 2) {
             const HWND z = rule.bringToFront ? HWND_TOP : HWND_BOTTOM;
@@ -111,15 +112,15 @@ static void CALLBACK EnforceProc(HWND, UINT, UINT_PTR timerId, DWORD) {
     if (it == g_enforce.end()) { KillTimer(nullptr, timerId); return; }
     Enforcement& e = it->second;
     e.ticksLeft--;
-    if (!IsWindow(e.hwnd) || e.ticksLeft <= 0 || e.ruleIdx >= g_rules.size()) {
+    const PlacementRule* rule = FindRule(e.exe);
+    if (!IsWindow(e.hwnd) || e.ticksLeft <= 0 || !rule) {
         KillTimer(nullptr, timerId);
         g_enforce.erase(it);
         return;
     }
-    int drift = CheckPlacement(e.hwnd, g_rules[e.ruleIdx], Monitors());
-    // Always re-apply z-order for "back" windows — reliable detection is hard
-    if (!g_rules[e.ruleIdx].bringToFront) drift |= 4;
-    if (drift) ApplyRule(e.hwnd, g_rules[e.ruleIdx], drift);
+    int drift = CheckPlacement(e.hwnd, *rule, Monitors());
+    if (!rule->bringToFront) drift |= 4;
+    if (drift) ApplyRule(e.hwnd, *rule, drift);
 }
 
 // Fires 200ms after window detection — lets the app finish its own geometry setup first
@@ -130,10 +131,11 @@ static void CALLBACK DelayedApplyProc(HWND, UINT, UINT_PTR timerId, DWORD) {
     PendingApply pa = it->second;
     g_pending.erase(it);
 
-    if (!IsWindow(pa.hwnd) || pa.ruleIdx >= g_rules.size()) return;
-    ApplyRule(pa.hwnd, g_rules[pa.ruleIdx]);
+    const PlacementRule* rule = FindRule(pa.exe);
+    if (!IsWindow(pa.hwnd) || !rule) return;
+    ApplyRule(pa.hwnd, *rule);
     UINT_PTR tid = SetTimer(nullptr, 0, 500, EnforceProc);
-    if (tid) g_enforce[tid] = { pa.hwnd, pa.ruleIdx, 20 };
+    if (tid) g_enforce[tid] = { pa.hwnd, pa.exe, 20 };
 }
 
 static void CALLBACK OnWindowShow(HWINEVENTHOOK, DWORD event, HWND hwnd, LONG idObject, LONG, DWORD, DWORD) {
@@ -141,19 +143,19 @@ static void CALLBACK OnWindowShow(HWINEVENTHOOK, DWORD event, HWND hwnd, LONG id
     if (g_rules.empty()) return;
     if (!IsWindow(hwnd) || !IsWindowVisible(hwnd)) return;
     if (GetParent(hwnd) || (GetWindowLongW(hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW)) return;
+    // Purge stale handles to prevent HWND-reuse misses
+    for (auto it = g_placed.begin(); it != g_placed.end(); )
+        it = IsWindow(*it) ? ++it : g_placed.erase(it);
     if (g_placed.count(hwnd)) return;
 
     const std::wstring exe = ExeFilename(hwnd);
     if (exe.empty()) return;
 
-    for (size_t i = 0; i < g_rules.size(); ++i) {
-        if (_wcsicmp(g_rules[i].exe.c_str(), exe.c_str()) == 0) {
-            g_placed.insert(hwnd);
-            // Delay 200ms via timer (not Sleep) so the message pump stays responsive
-            UINT_PTR tid = SetTimer(nullptr, 0, 200, DelayedApplyProc);
-            if (tid) g_pending[tid] = { hwnd, i };
-            return;
-        }
+    if (FindRule(exe)) {
+        g_placed.insert(hwnd);
+        UINT_PTR tid = SetTimer(nullptr, 0, 200, DelayedApplyProc);
+        if (tid) g_pending[tid] = { hwnd, exe };
+        return;
     }
 }
 

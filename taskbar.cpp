@@ -49,7 +49,7 @@ static std::wstring WindowAumid(HWND h) {
     if (SUCCEEDED(SHGetPropertyStoreForWindow(h, IID_PPV_ARGS(&ps)))) {
         PROPVARIANT v;
         PropVariantInit(&v);
-        if (SUCCEEDED(ps->GetValue(PKEY_AppUserModel_ID, &v)) && v.vt == VT_LPWSTR) s = v.pwszVal;
+        if (SUCCEEDED(ps->GetValue(PKEY_AppUserModel_ID, &v)) && v.vt == VT_LPWSTR && v.pwszVal) s = v.pwszVal;
         PropVariantClear(&v);
     }
     if (s.empty()) {   // packaged apps carry it on the process

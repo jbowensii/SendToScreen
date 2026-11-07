@@ -10,6 +10,22 @@ static HWND g_hwnd;
 static HHOOK g_hook;
 static NOTIFYICONDATAW g_nid;
 
+static int g_trayRetries;
+
+static void CALLBACK TrayRetryProc(HWND, UINT, UINT_PTR id, DWORD) {
+    Shell_NotifyIconW(NIM_DELETE, &g_nid);
+    if (Shell_NotifyIconW(NIM_ADD, &g_nid) || ++g_trayRetries >= 8) {
+        KillTimer(nullptr, id);
+        if (g_trayRetries >= 8) Log(L"WARNING: tray icon registration failed after retries");
+    }
+}
+
+static void AddTrayIcon() {
+    if (Shell_NotifyIconW(NIM_ADD, &g_nid)) return;
+    g_trayRetries = 0;
+    SetTimer(nullptr, 0, 500, TrayRetryProc);
+}
+
 void Log(const std::wstring& line) {
     OutputDebugStringW((line + L"\n").c_str());
     static const std::wstring path = [] {
@@ -130,7 +146,7 @@ static void ShowTrayMenu(HWND h) {
 static LRESULT CALLBACK WndProc(HWND h, UINT msg, WPARAM wp, LPARAM lp) {
     static bool busy = false;
     if (msg == WM_TASKBARCREATED) {
-        Shell_NotifyIconW(NIM_ADD, &g_nid);
+        AddTrayIcon();
         return 0;
     }
     switch (msg) {
@@ -197,11 +213,13 @@ int WINAPI wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE, _In_ PWSTR cmd, _I
     g_nid.uCallbackMessage = WM_TRAY;
     g_nid.hIcon = static_cast<HICON>(LoadImageW(hInst, MAKEINTRESOURCEW(1), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR));
     wcscpy_s(g_nid.szTip, L"SendToScreen: Ctrl+right-click a taskbar button");
-    Shell_NotifyIconW(NIM_ADD, &g_nid);
+    AddTrayIcon();
     TrimWorkingSet();
 
     MSG msg;
     while (GetMessageW(&msg, nullptr, 0, 0)) {
+        HWND dlg = FindWindowW(L"SendToScreenRulesWnd", nullptr);
+        if (dlg && IsDialogMessageW(dlg, &msg)) continue;
         TranslateMessage(&msg);
         DispatchMessageW(&msg);
     }
